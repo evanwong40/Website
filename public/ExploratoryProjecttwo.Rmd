@@ -1,0 +1,267 @@
+---
+title: 'Exploratory Project #2: Modeling'
+author: "Evan Wong (ew9623)"
+date: "11/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+```
+
+## Introduction
+
+```{r,echo=FALSE}
+diabetes <- read_excel("Diabetes Data (Exploratory Project 2).xlsx")
+
+#Create a categorical variable for number of preganancies
+diabetes<-diabetes%>%mutate_if(is.factor,~as.numeric(as.character(.x)))
+diabetes$pregnancies[diabetes$pregnancies==0|diabetes$pregnancies==1]="low"
+diabetes$pregnancies[diabetes$pregnancies==2|diabetes$pregnancies==3|diabetes$pregnancies==4|diabetes$pregnancies==5]="med"
+diabetes$pregnancies[diabetes$pregnancies==2|diabetes$pregnancies==3|diabetes$pregnancies==4|diabetes$pregnancies==5|diabetes$pregnancies==6|diabetes$pregnancies==7|diabetes$pregnancies==8|diabetes$pregnancies==9|diabetes$pregnancies==10|diabetes$pregnancies==11|diabetes$pregnancies==13|diabetes$pregnancies==15]="high"
+```
+The dataset,diabetes, was found on kaggle, and show shows a collection of data as part of the Pima Indian Diabetes Database. This is a subgroup of the data that consists of females that are aged 21 and above. The dataset column show the number of pregnancies, insulin levels, glucose levels, blood pressure, skin thickness, BMI, and outcome (diabetes or no diabetes). Before analysis, I predict that increases in each of the categories will have a corresponding increase in risk for developing diabetes, but further analysis will be done in order to validate this claim. 
+
+```{r,echo=FALSE}
+#Performing a manova test
+man1<-manova(cbind(glucose,bp,skin_thickness,insulin,BMI,Age)~pregnancies,data=diabetes) 
+summary(man1,tol=0)
+
+#One-way ANOVA
+summary(aov(diabetes$glucose~diabetes$pregnancies))
+summary(aov(diabetes$bp~diabetes$pregnancies))
+summary(aov(diabetes$skin_thickness~diabetes$pregnancies))
+summary(aov(diabetes$insulin~diabetes$pregnancies))
+summary(aov(diabetes$BMI~diabetes$pregnancies))
+summary(aov(diabetes$Age~diabetes$pregnancies))
+
+#Running indiviudal pairwise t-tests to see which groups differ significantly
+pairwise.t.test(diabetes$Age,diabetes$pregnancies,p.adj="none")
+
+#Bonferri Correction
+0.05/10 #(1 manova, 6 anova, 3 pairwise t-test)
+
+#Probability of a type 1 error
+1-(0.95)^10
+
+```
+A one-way manova test was conducted to determine the effect of numer of pregnacncy (low,med, and high) on 6 dependent variables (glucose, bp, skin thickness, insulin, BMI, and age). Since the number of obersvations in each group was greater than 25, then we can assume normality of the dependent variables. Additionally we can assume that the sample was random and the observations were independent. It is unlikely that the covaraince assumption can be met because the group "high" for number of pregancies has no upper bound, and therefore encompasses a greater range of number of pregnancies which may lead to a greater variance of the corresponding dependent variables relative to the low and med groups. We can also assume that there are no unusual outliers. Also, it is unlikely that the dependent variables were not correlated since they are all health indicators, and they all typically increase as age increases. The results of the manova indicated that at least one of the mean values of the dependedt variables differes significantly from the number of pregancies (p=0.0002624) even after bonferri adjustment since p remains larger than 0.005. 
+
+Post ANOVA tests were performed in order to determine which of these dependent variables were statistically significant with respect to number of pregnancies, and it was found that only the age was statistically significant (p=4.99e-06). Post-hoc test indicate that the age was statistically significant between the low and high group (3e-06) and the med and high group (p=0.00024), but not statistically significant between the low and med groups (p=0.15719). 
+
+A total of 10 tests were performed, and the probability of having a type 1 error is 40.13%. 
+
+```{r,echo=FALSE}
+#Actual test statistic
+low<-diabetes%>%filter(pregnancies=="low")
+high<-diabetes%>%filter(pregnancies=="high")
+mean(high$Age)-mean(low$Age)
+
+#randomization
+rand_dist<-vector()
+for(i in 1:5000){
+new<-data.frame(Age=sample(diabetes$Age),condition=diabetes$pregnancies)
+rand_dist[i]<-mean(new[new$condition=="high",]$Age)-
+ mean(new[new$condition=="low",]$Age)}
+
+hist(rand_dist,main="",ylab="");abline(v=-12.42398,col="red")
+
+#P-value calculation
+mean(rand_dist>12.42398)*2 
+
+```
+The null hypothesis of this test is that the difference in mean age for patients who are classified as high number of pregancies and patients who are classified as low number of pregnancies is zero. The alternative hypothesis is that the difference in mean age between these 2 groups is not zero. The actual mean difference in the sample was 12.423 years, and after conducting the test, this value was determined to be statistically significant with a p-value of 0. This can be seen in the histogram in which the red line is the value of the test statistic (doesn't even show up on grpah). Therefore, we can reject the null hypothesis and conclude that the value of difference in mean age between the patients with high number of pregnancies and the low number of pregnancies is not zero.
+
+```{r,echo=FALSE}
+#Predicting BMI with glucose,BP, and insulin levels
+diabetes$c_glucose<-diabetes$glucose-mean(diabetes$glucose)
+diabetes$c_bp<-diabetes$bp-mean(diabetes$bp)
+diabetes$c_insulin<-diabetes$insulin-mean(diabetes$insulin)
+fit<-lm(BMI~c_glucose*c_bp*c_insulin,data=diabetes);summary(fit)
+
+#Plot the regression
+diabetes%>%ggplot(aes(c_glucose,BMI))+
+  geom_point()+
+  geom_smooth(method='lm',se=F)
+diabetes%>%ggplot(aes(c_bp,BMI))+
+  geom_point()+
+  geom_smooth(method='lm',se=F)
+
+#Check assumptions of linearity, normality, and homoskedasticty
+plot(diabetes$glucose,diabetes$BMI)
+plot(diabetes$bp,diabetes$BMI)
+
+#homoskedasticity
+library(lmtest)
+bptest(fit)
+resids<-fit$residuals
+fitvals<-fit$fitted.values
+ggplot()+
+  geom_point(aes(fitvals,resids))+
+  geom_hline(yintercept=0,color='red')
+
+#normality
+ggplot()+
+  geom_histogram(aes(resids))
+
+#Recompute using robust standard errors
+library(sandwich)
+coeftest(fit,vcov=vcovHC(fit))
+
+#Rerun regresion without interactions
+fit1<-lm(BMI~c_glucose+c_bp+c_insulin,data=diabetes)
+
+#Likelihood ratio tests
+lrtest(fit1,fit)
+
+```
+
+
+For every 1 unit increase in glucose level, there is a corresponding 3.065e-02 increase in BMI. For every 1 unit increase in blood pressure level, there is a corresponding 1.122e-01 unit increase in BMI. For every one unit increase in insulin level, there is a corresponding 2.113e-02 increase in BMI. 
+
+Since the scatterplot for each variable shows no clear curvy pattern with the BMI variable, the dependent variables can be assumed to have a linear relationship with the BMI. Since the breusch-pagan test resulted in a p-value that is learger than 0.05, heteroskedasticity can be assumed to exist in the data. Since the histogram of the residuals appears to be symmetrical and unimodal, we can assume that the distribution is approximately normal, especially since the number of observations is greater than 25.
+
+After running the regression with the robust standard errors, the dependent variables are still not statistically significant in determing the BMI since none of the p-values are below 0.05. 
+
+27.7% of the variation in BMI can be explained by the glucose, blood pressure, and insulin levels, and this value is determined from the summary(fit).
+
+Based on the results of the likelihood ratio test, the interactions between the variables provides a statistically significant improvement in the model when determining the BMI based on the predictor vairbales:glucose,bp, and insulin levels. 
+
+```{r,echo=FALSE}
+#Regression model with Bootstrapped standard errors
+samp_distn<-replicate(5000, {
+ boot_dat<-diabetes[sample(nrow(diabetes),replace=TRUE),]
+ fit2<-lm(BMI~glucose*bp*insulin,data=boot_dat)
+ coef(fit2)
+})
+samp_distn%>%t%>%as.data.frame%>%summarize_all(sd)
+
+```
+Compared to both the original standard errors and the robust standard errors, the bootsrapped standard errors are larger for all dependent variables:glucose,blood pressure, and insulin levels. The bootstrapped standard error of the interaction between glucose and blood pressure was greater than the original standard error, but smaller than the robust standard errors. The bootstrapped standard error of the interaction between glucose and insulin was larger than both the original and robust standard erros. The bootstraped standard error of the interaction between bloof pressure and insulin was greater than both the original and robust standard errors. Lastly the bootsrapped standard error of the interaction between glucose, blood pressure, and insulin was larger than both the original and robust standard errors. Since the bootstrapped standard errors are larger compared to the original and the robust standard errors, the p-values were mostly larger as well. 
+
+```{r,echo=FALSE}
+#Logistic regression predicting diabetes (binary variable)
+fit3<-glm(outcome~Age+glucose,data=diabetes,family=binomial(link="logit"));coeftest(fit3)
+exp(0.0464011)
+exp(0.0296765)
+
+#Confusion matrix
+diabetes$prob<-predict(fit3,type = "response")
+table(truth=diabetes$outcome,prediction=as.numeric(diabetes$prob>.5))%>%addmargins
+
+#Accuracy
+(55+21)/101
+#Sensitivity (TPR)
+21/38
+#Specificity (FPR)
+55/63
+#PPV (precision)
+21/29
+
+#Plotting density of log odds
+diabetes$logit<-predict(fit3) #get predicted log-odds
+diabetes$outcome<-as.factor(diabetes$outcome)
+ggplot(diabetes,aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+
+#ROC Curve and AUC
+tdat<-diabetes%>%mutate(prediction=ifelse(prob>0.5,1,0))
+classify<-tdat%>%transmute(prob,prediction,truth=outcome)
+classify
+library(plotROC)
+ROCplot<-ggplot(classify)+geom_roc(aes(d=truth,m=prob),n.cuts=0)
+ROCplot
+calc_auc(ROCplot)
+
+#Class diag function
+class_diag<-function(probs,truth){
+ tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+ acc=sum(diag(tab))/sum(tab)
+ sens=tab[2,2]/colSums(tab)[2]
+ spec=tab[1,1]/colSums(tab)[1]
+ ppv=tab[2,2]/rowSums(tab)[2]
+ if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+ #CALCULATE EXACT AUC
+ ord<-order(probs, decreasing=TRUE)
+ probs <- probs[ord]; truth <- truth[ord]
+ TPR=cumsum(truth)/max(1,sum(truth))
+ FPR=cumsum(!truth)/max(1,sum(!truth))
+ dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+ TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+ n <- length(TPR)
+ auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+ data.frame(acc,sens,spec,ppv,auc)
+} 
+
+#5-fold cross validation
+set.seed(1234)
+k=5
+diabetes1<-diabetes%>%dplyr::select(-prob)
+data1<-diabetes1[sample(nrow(diabetes1)),]
+folds<-cut(seq(1:nrow(data1)),breaks=k,labels=F)
+diags<-NULL
+for(i in 1:k){
+ ## Create training and test sets
+ train<-data1[folds!=i,]
+ test<-data1[folds==i,]
+ truth<-test$outcome
+ ## Train model on training set
+ fit3<-glm(outcome~Age+glucose,data=diabetes,family=binomial(link="logit"))
+ probs<-predict(fit3,newdata = test,type="response")
+ ## Test model on test set (save all k results)
+ diags<-rbind(diags,class_diag(probs,truth))
+}
+apply(diags,2,mean) #average across all k results
+# your code here
+```
+Every one unit increase in age multiplies the odds of diabetes by 1.047, and every one unit increase in glucose level multiplies the odds of diabetes by 1.03. The accuracy of the model is 75.2%. The sensitivity of the model is 55.2%. The specificity of the model is 87.3%. The precision of the model is 72.4%. 
+
+Since the area under the ROC curve is 0.768, the model is fair at predicting the outcome of diabetes. 
+
+After performing the 5 fold cross valdation, the out of sample accuracy, sensitivty, specificity, and recall are 75.2%, 53.4%, 87.7% and 68.4% respectively. 
+
+```{r,echo=FALSE}
+#Lasso regression
+library(glmnet)
+diabetes2<-diabetes%>%dplyr::select(pregnancies,glucose,bp,insulin,BMI,Age,outcome)
+y<-as.matrix(diabetes2$outcome)
+x<-model.matrix(outcome~(.),data=diabetes2)[,-1]
+cv<-cv.glmnet(x,y,family="binomial")
+lasso<-glmnet(x,y,family="binomial",lambda=cv$lambda.1se)
+coef(lasso)
+
+set.seed(1234)
+k=5
+diabetes1<-diabetes%>%dplyr::select(-prob)
+data1<-diabetes1[sample(nrow(diabetes1)),]
+folds<-cut(seq(1:nrow(data1)),breaks=k,labels=F)
+diags<-NULL
+for(i in 1:k){
+ ## Create training and test sets
+ train<-data1[folds!=i,]
+ test<-data1[folds==i,]
+ truth<-test$outcome
+ ## Train model on training set
+ fit4<-glm(outcome~glucose+BMI+Age,data=diabetes,family="binomial")
+ probs<-predict(fit4,newdata = test,type="response")
+ ## Test model on test set (save all k results)
+ diags<-rbind(diags,class_diag(probs,truth))
+}
+apply(diags,2,mean) #average across all k results
+# your code here
+
+```
+After running the lasso regression, it was determined that only glucose, BMI, and age were important in determing the outcome of diabetes. After rerunning a 5-fold cross validation test with these variables, the accuracy of the model increased to 79.9% compared to the previous 75.2% which was based on a regression with just age and glucose. 
+
+
+
+
+
+
+
+
+
+
+

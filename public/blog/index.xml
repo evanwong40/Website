@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blogs on Evan Wong</title>
+    <link>/blog/</link>
+    <description>Recent content in Blogs on Evan Wong</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Fri, 13 Dec 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/blog/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Blog #1</title>
+      <link>/blog/blog-1/</link>
+      <pubDate>Fri, 13 Dec 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/blog-1/</guid>
+      <description>Hello world. Here are some cool things that I learned in python in SDS 348!
+The first neat thing that we talked abot was using Regular expressions functions in python to mine phrases and lines! In homework 11, we were asked to create certain outputs by using regex functions on a provided string. My favorite part was using these regex functions to find the restriction sites for a specific enzyme because this was my first real exposure to how we can use coding to find something useful in relation to biology.</description>
+    </item>
+    
+  </channel>
+</rss>

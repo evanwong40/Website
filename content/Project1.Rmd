@@ -1,0 +1,122 @@
+---
+title: 'Exploratory Project #1: NBA Player Injuries'
+author: "Evan Wong (ew9623)"
+date: "10/17/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r,echo=FALSE}
+injuries<-read.csv("injuries.csv")
+player_data<-read.csv("player_data.csv")
+head(injuries)
+head(player_data)
+```
+These datasets were found on https://www.kaggle.com/datasets. The dataset, injuries, includes details on every injury in the NBA from 2010-2018. "Injuries"" has the vairables: Date of injury,team played for, name of player, and general notes regarding the injury. The dataset, player_data, contains data on the individual statistics for 67 seasons since 1950. "player_data" has the variables player name, year start/end for career, position, height, weight, birthdate, and college. For this project i want to explore the statistics of players who get injured and see if there is a correlation between weight,height,size,years played,position, in addition to any other interesting findings that i may encounter along the way. These particular datsets are interesting to me because I have always wondered whether it was more likely to be injured while playing in a guard position in basketball in comparison to a bigger position (forward or center). From my experience basketball players who play guard positions are injured more frequently because they move and run around the court more so than centers and forwards. 
+
+```{r,echo=FALSE}
+#Join both datasets 
+df<-injuries%>%left_join(player_data,by=c("Relinquised"="name"))%>%na.omit
+#How many rows were left out of "injuries"?
+nrow(injuries)-nrow(df)
+
+#How many rows were left out of "player_data"?
+nrow(player_data)-n_distinct(df$Relinquised)
+```
+I chose to do a left join of "injuries" as my df1 and "player_data" as my df2 because i wanted to keep all my data from "injuries", and only attach the players' statistics/measurements associated with each player in "injuries". I then Omitted the NA values. There were 2300 rows that were left out in the dataset injuries due to the player not being found in "player_data" or some of the players that got injured in 2018 were not on record in "player_data". There were 3858 rows in "player_data" that were ommited because not each player in teh dataset had injuries from 2010-2018. 
+
+```{r,echo=FALSE}
+#Create a subset for Team=Mavericks
+mavs<-df%>%filter(Team=="Mavericks") 
+mavs%>%arrange(weight)%>%head() 
+mavs%>%select(Relinquised,position,height,weight,Team,-college)%>%head()
+```
+This section is mainly used to demonstrate some of the functions of dplyr. I created a subset of data called "mavs" which shows all injuries that occured in "df" in which the player who was injured was on the Mavericks team roster. I then arranged "mavs" by their weight in pounds, and then selected certain variables that i wanted to see including name, position, height, weight, and team. 
+
+```{r,echo=FALSE}
+#Create a new column for total number of years played in the NBA
+df<-df%>%mutate(years_played=year_end-year_start) 
+
+#Create a new column of height in total inches 
+df<-df%>% 
+  separate(height,into=c("feet","inches"),remove=FALSE)%>%
+  transform(feet=as.numeric(feet),inches=as.numeric(inches))%>%
+  mutate(height_inches=12*feet+inches)
+
+#Data table for summary statistics
+df%>%
+  group_by(position)%>%
+  summarise(mean_weight=mean(weight),sd_weight=sd(weight),var_weight=var(weight),mean_years_played=mean(years_played),sd_years_played=sd(years_played),var_years_played=var(years_played),mean_height=mean(height_inches,sd_height=sd(height_inches),var_height=var(height_inches))) 
+
+#Plot showing the proportion of injuries per position with respect to each team
+df%>% 
+  ggplot(aes(x = Team))+
+  geom_bar(aes(fill=position),width = 0.8,position="fill")+
+  coord_flip()+
+  scale_y_continuous(labels=scales::percent)+
+  ggtitle(label = "Proportion of Injuries Colored by Position Played for Teams") +
+  xlab("Team")+
+  ylab("Proportion of Injury")
+
+
+#Scatterplot showing the spread of injuries with respect to the players' height and weight
+df%>%
+  ggplot(aes(x=weight,y=height_inches,color=position))+
+  geom_point(size=0.7)+
+  ggtitle("Injuries with respect to height and weight")+
+  xlab("Weight(lbs)")+
+  ylab("Height (Inches)")
+
+#Barplot using Stat=Summary
+df%>%
+  ggplot(aes(x=position,y=years_played))+
+  geom_bar(stat="summary",fun.y="mean")+
+  geom_errorbar(stat="summary")
+```
+
+I created a new column in "df" called years_played in order to condense 2 variables (year_end and year_start) into 1 that can be numerically interpretted. I then created a data table for summary statistics grouping by the position that the player played, including information such as mean weight, mean years_played,etc. 
+
+Then i created a barplot showing the proportion of injuries according to position with respect to each and every 30 of the NBA teams. In doing so, it is clear that this proportion varys from team to team because each team has differently colored bars; some such as the bobcats have the majority of their injuries in the forward position, while some such as the Pelicans have the majority of their injuries in the guard position. This may not seem like a useful statistic for the common NBA fan. However, this statistic is vital to conveying information about what type of offense teams may utlize. For offenses that use a lot of ball movement and rotations, it is more likely that the guards may get injured in a greater proportion than the centers. Contrastly, offenses that utilize pick and roll movements and isolation post-ups can equate to more injuries in the forward and center positions. Further testing would need to be implemented with data on the teams' offense styles, but this plot clearly shows that there is a difference in injury proportion across position with respect to teams. Also displays that the majority of injuries occur in the guard and forward positions. 
+
+After this, i wanted to determine whether there was a correlation between the position played and the height and weight of the players who got injured. First i had to separate the height variable into feet and inches. Then i had to mutate these variables, and recombine them into a new variable "height" in order to create an entirely new numeric column that expressed height in total inches rather than "feet-inches" format. From this plot, we can see that there seem to be clear clusters of injuries with respect to position played. Centers are naturally heavier and taller, while guards are lighter and shorter. 
+
+```{r,echo=FALSE}
+#grabbing all useful numerical and scaled data, and running a princomp function 
+df1<-df%>%select(height_inches,weight,years_played)%>%scale 
+df1_pca<-princomp(df1)
+summary(df1_pca, loadings=T)
+
+#Below is where i decide how many PCs to keep
+eigval<-df1_pca$sdev^2
+varprop=round(eigval/sum(eigval),2)
+ggplot()+geom_bar(aes(y=varprop,x=1:3),stat="identity")+xlab("")+geom_path(aes(y=varprop,x=1:3))+
+ geom_text(aes(x=1:3,y=varprop,label=round(varprop,2)),vjust=1,col="white",size=5)+
+ scale_y_continuous(breaks=seq(0,.6,.2),labels = scales::percent)+
+ scale_x_continuous(breaks=1:10)
+
+#Summarizing results below
+summary(df1_pca, loadings=T)
+
+#Plotting scores below to shwo the data with respect to PC#1 &PC#2
+ggplot()+geom_point(aes(df1_pca$scores[,1], df1_pca$scores[,2]))+xlab("PC1")+ylab("PC2")
+
+#The plot made below shows the correlations of the varibales with the principle component
+df1_pca$loadings[1:3,1:2]%>%as.data.frame%>%rownames_to_column%>%
+ggplot()+geom_hline(aes(yintercept=0),lty=2)+
+ geom_vline(aes(xintercept=0),lty=2)+ylab("PC2")+xlab("PC1")+
+ geom_segment(aes(x=0,y=0,xend=Comp.1,yend=Comp.2),arrow=arrow(),col="red")+
+ geom_label(aes(x=Comp.1*1.1,y=Comp.2*1.1,label=rowname))
+```
+
+Since the culmulative variation explained by the principle component #2 is 0.94, i will keep 2 principle components. After taking a look a the summary of the principle components, it can be determined that the higher the score for principle component #1, the heavier and taller the individual is. Similarly, the higher score for principle component#2, the more years that the individual has played in the NBA. Based on the final plot displaying the correlations of te variabels with respect to each principle component, it is clear that the first principle component is a combination of height and weight, while the second principle component has year_played as it's primary component. 
+
+#General Notes/Complications
+
+The joined dataset only contained 3 numerical variables, so producing a pca was not the most insightful way of displaying anything too interesting. FOr example, since weight and height are typically correlated, the principle component #1 could be essentially determine by either just weight or height alone. Therefore, the pca graph displaying the obersvations basically just showed a scatterplot with years_played on one axis, and height or weight on the other axis. In addition, the datasets were already tidy when I found them, so there was no point in completing a pivot_wider or pivot_longer function. However, I did have to sepearate the original height column because the format was in feet-inches, rather than in total feet or total inches. Overall, this was a fun project, and it was a great way to apply the things that I learned!

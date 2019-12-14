@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Evan Wong" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Exploratory Project #1: NBA Player Injuries</title>
+    <meta name="generator" content="Hugo 0.61.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/evanwongresume.pdf">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/exploratoryprojectone/">Exploratory Project #1: NBA Player Injuries</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<pre><code>##        Date    Team Acquired                   Relinquised
+## 1 10/3/2010   Bulls                          Carlos Boozer
+## 2 10/6/2010 Pistons                          Jonas Jerebko
+## 3 10/6/2010 Pistons                          Terrico White
+## 4 10/8/2010 Blazers          Jeff Pendergraph / Jeff Ayres
+## 5 10/8/2010    Nets                            Troy Murphy
+## 6 10/8/2010 Pistons                          Jonas Jerebko
+##                                                      Notes
+## 1  fractured bone in right pinky finger (out indefinitely)
+## 2           torn right Acchilles tendon (out indefinitely)
+## 3 broken fifth metatarsal in right foot (out indefinitely)
+## 4                torn ACL in right knee (out indefinitely)
+## 5                   strained lower back (out indefinitely)
+## 6             surgery to repair torn right Achilles tendon</code></pre>
+<pre><code>##                  name year_start year_end position height weight
+## 1      Alaa Abdelnaby       1991     1995      F-C   6-10    240
+## 2     Zaid Abdul-Aziz       1969     1978      C-F    6-9    235
+## 3 Kareem Abdul-Jabbar       1970     1989        C    7-2    225
+## 4  Mahmoud Abdul-Rauf       1991     2001        G    6-1    162
+## 5   Tariq Abdul-Wahad       1998     2003        F    6-6    223
+## 6 Shareef Abdur-Rahim       1997     2008        F    6-9    225
+##          birth_date                               college
+## 1     June 24, 1968                       Duke University
+## 2     April 7, 1946                 Iowa State University
+## 3    April 16, 1947 University of California, Los Angeles
+## 4     March 9, 1969            Louisiana State University
+## 5  November 3, 1974             San Jose State University
+## 6 December 11, 1976              University of California</code></pre>
+<p>These datasets were found on <a href="https://www.kaggle.com/datasets" class="uri">https://www.kaggle.com/datasets</a>. The dataset, injuries, includes details on every injury in the NBA from 2010-2018. “Injuries”" has the vairables: Date of injury,team played for, name of player, and general notes regarding the injury. The dataset, player_data, contains data on the individual statistics for 67 seasons since 1950. “player_data” has the variables player name, year start/end for career, position, height, weight, birthdate, and college. For this project i want to explore the statistics of players who get injured and see if there is a correlation between weight,height,size,years played,position, in addition to any other interesting findings that i may encounter along the way. These particular datsets are interesting to me because I have always wondered whether it was more likely to be injured while playing in a guard position in basketball in comparison to a bigger position (forward or center). From my experience basketball players who play guard positions are injured more frequently because they move and run around the court more so than centers and forwards.</p>
+<pre><code>## Warning: Column `Relinquised`/`name` joining factors with different levels,
+## coercing to character vector</code></pre>
+<pre><code>## [1] 2300</code></pre>
+<pre><code>## [1] 3858</code></pre>
+<p>I chose to do a left join of “injuries” as my df1 and “player_data” as my df2 because i wanted to keep all my data from “injuries”, and only attach the players’ statistics/measurements associated with each player in “injuries”. I then Omitted the NA values. There were 2300 rows that were left out in the dataset injuries due to the player not being found in “player_data” or some of the players that got injured in 2018 were not on record in “player_data”. There were 3858 rows in “player_data” that were ommited because not each player in teh dataset had injuries from 2010-2018.</p>
+<pre><code>##         Date      Team Acquired       Relinquised
+## 1  6/27/2011 Mavericks          Rodrigue Beaubois
+## 2  11/7/2012 Mavericks          Rodrigue Beaubois
+## 3 11/17/2012 Mavericks          Rodrigue Beaubois
+## 4  3/17/2013 Mavericks          Rodrigue Beaubois
+## 5  3/18/2013 Mavericks          Rodrigue Beaubois
+## 6  7/12/2013 Mavericks               Shane Larkin
+##                                      Notes year_start year_end position height
+## 1  surgery on left foot (out indefinitely)       2010     2013        G    6-0
+## 2                sprained left ankle (DNP)       2010     2013        G    6-0
+## 3                       ankle injury (DNP)       2010     2013        G    6-0
+## 4   fractured left hand (out indefinitely)       2010     2013        G    6-0
+## 5                fractured left hand (DNP)       2010     2013        G    6-0
+## 6 fractured right ankle (out indefinitely)       2014     2018        G   5-11
+##   weight        birth_date             college
+## 1    170 February 24, 1988                    
+## 2    170 February 24, 1988                    
+## 3    170 February 24, 1988                    
+## 4    170 February 24, 1988                    
+## 5    170 February 24, 1988                    
+## 6    175   October 2, 1992 University of Miami</code></pre>
+<pre><code>##       Relinquised position height weight      Team
+## 1    Shawn Marion        F    6-7    220 Mavericks
+## 2    Caron Butler        F    6-7    228 Mavericks
+## 3 Dominique Jones        G    6-4    215 Mavericks
+## 4 Dominique Jones        G    6-4    215 Mavericks
+## 5 Brendan Haywood        C    7-0    268 Mavericks
+## 6 Brendan Haywood        C    7-0    268 Mavericks</code></pre>
+<p>This section is mainly used to demonstrate some of the functions of dplyr. I created a subset of data called “mavs” which shows all injuries that occured in “df” in which the player who was injured was on the Mavericks team roster. I then arranged “mavs” by their weight in pounds, and then selected certain variables that i wanted to see including name, position, height, weight, and team.</p>
+<pre><code>## # A tibble: 7 x 8
+##   position mean_weight sd_weight var_weight mean_years_play~ sd_years_played
+##   &lt;fct&gt;          &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;
+## 1 C               262.      20.3       412.             7.89            4.32
+## 2 C-F             245.      15.5       240.             6.82            4.05
+## 3 F               232.      14.2       202.             8.39            4.11
+## 4 F-C             246.      14.1       199.            10.2             5.06
+## 5 F-G             221.      16.5       273.            10.5             4.47
+## 6 G               197.      13.6       184.             8.28            3.97
+## 7 G-F             214.      10.7       115.             9.17            4.49
+## # ... with 2 more variables: var_years_played &lt;dbl&gt;, mean_height &lt;dbl&gt;</code></pre>
+<p><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-4-1.png" width="672" /><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
+<pre><code>## No summary function supplied, defaulting to `mean_se()</code></pre>
+<p><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-4-3.png" width="672" /></p>
+<p>I created a new column in “df” called years_played in order to condense 2 variables (year_end and year_start) into 1 that can be numerically interpretted. I then created a data table for summary statistics grouping by the position that the player played, including information such as mean weight, mean years_played,etc.</p>
+<p>Then i created a barplot showing the proportion of injuries according to position with respect to each and every 30 of the NBA teams. In doing so, it is clear that this proportion varys from team to team because each team has differently colored bars; some such as the bobcats have the majority of their injuries in the forward position, while some such as the Pelicans have the majority of their injuries in the guard position. This may not seem like a useful statistic for the common NBA fan. However, this statistic is vital to conveying information about what type of offense teams may utlize. For offenses that use a lot of ball movement and rotations, it is more likely that the guards may get injured in a greater proportion than the centers. Contrastly, offenses that utilize pick and roll movements and isolation post-ups can equate to more injuries in the forward and center positions. Further testing would need to be implemented with data on the teams’ offense styles, but this plot clearly shows that there is a difference in injury proportion across position with respect to teams. Also displays that the majority of injuries occur in the guard and forward positions.</p>
+<p>After this, i wanted to determine whether there was a correlation between the position played and the height and weight of the players who got injured. First i had to separate the height variable into feet and inches. Then i had to mutate these variables, and recombine them into a new variable “height” in order to create an entirely new numeric column that expressed height in total inches rather than “feet-inches” format. From this plot, we can see that there seem to be clear clusters of injuries with respect to position played. Centers are naturally heavier and taller, while guards are lighter and shorter.</p>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2     Comp.3
+## Standard deviation     1.3520342 1.0001277 0.41394110
+## Proportion of Variance 0.6094136 0.3334630 0.05712338
+## Cumulative Proportion  0.6094136 0.9428766 1.00000000
+## 
+## Loadings:
+##               Comp.1 Comp.2 Comp.3
+## height_inches  0.707         0.707
+## weight         0.707        -0.707
+## years_played         -1.000</code></pre>
+<p><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2     Comp.3
+## Standard deviation     1.3520342 1.0001277 0.41394110
+## Proportion of Variance 0.6094136 0.3334630 0.05712338
+## Cumulative Proportion  0.6094136 0.9428766 1.00000000
+## 
+## Loadings:
+##               Comp.1 Comp.2 Comp.3
+## height_inches  0.707         0.707
+## weight         0.707        -0.707
+## years_played         -1.000</code></pre>
+<p><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-5-2.png" width="672" /><img src="/ExploratoryProjectone_files/figure-html/unnamed-chunk-5-3.png" width="672" /></p>
+<p>Since the culmulative variation explained by the principle component #2 is 0.94, i will keep 2 principle components. After taking a look a the summary of the principle components, it can be determined that the higher the score for principle component #1, the heavier and taller the individual is. Similarly, the higher score for principle component#2, the more years that the individual has played in the NBA. Based on the final plot displaying the correlations of te variabels with respect to each principle component, it is clear that the first principle component is a combination of height and weight, while the second principle component has year_played as it’s primary component.</p>
+<p>#General Notes/Complications</p>
+<p>The joined dataset only contained 3 numerical variables, so producing a pca was not the most insightful way of displaying anything too interesting. FOr example, since weight and height are typically correlated, the principle component #1 could be essentially determine by either just weight or height alone. Therefore, the pca graph displaying the obersvations basically just showed a scatterplot with years_played on one axis, and height or weight on the other axis. In addition, the datasets were already tidy when I found them, so there was no point in completing a pivot_wider or pivot_longer function. However, I did have to sepearate the original height column because the format was in feet-inches, rather than in total feet or total inches. Overall, this was a fun project, and it was a great way to apply the things that I learned!</p>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
